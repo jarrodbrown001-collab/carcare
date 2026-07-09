@@ -4,6 +4,10 @@ A local-first web app that makes owning a car less frustrating: track maintenanc
 get reminded before things are overdue, see what you're spending, and learn to do
 the easy jobs yourself.
 
+**Live app:** https://jarrodbrown001-collab.github.io/carcare/ — installable on
+phones via "Add to Home Screen". Data stays in each device's browser; move it
+between devices with Export/Import in the footer.
+
 ## Features
 
 - **Multiple vehicles** — each with its own mileage, reminder schedule, and history.
