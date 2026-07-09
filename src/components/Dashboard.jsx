@@ -96,6 +96,7 @@ export default function Dashboard({ data, navigate, onLogService }) {
                     <span className="muted">
                       {vehicleName(item.vehicle)} · {dueDetail(item)}
                     </span>
+                    {item.schedule.notes && <span className="due-note">📝 {item.schedule.notes}</span>}
                   </div>
                   <div className="due-actions">
                     {guideId && (

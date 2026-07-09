@@ -7,10 +7,12 @@ import { StatusPill, dueDetail, Modal } from './ui'
 import { vehicleName, VehicleForm } from './Vehicles'
 import { RecommendationCard, RecommendationForm } from './Recommendations'
 import ServiceForm from './ServiceForm'
+import ManualSection from './Manual'
+import PartsSection from './Parts'
 
 function ScheduleForm({ vehicleId, existing, onSave, onDelete, onClose }) {
   const [form, setForm] = useState(
-    existing ?? { type: 'oil-change', intervalMiles: '', intervalMonths: '' },
+    existing ?? { type: 'oil-change', intervalMiles: '', intervalMonths: '', notes: '' },
   )
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
 
@@ -31,6 +33,7 @@ function ScheduleForm({ vehicleId, existing, onSave, onDelete, onClose }) {
       type: form.type,
       intervalMiles: form.intervalMiles === '' ? null : Number(form.intervalMiles),
       intervalMonths: form.intervalMonths === '' ? null : Number(form.intervalMonths),
+      notes: form.notes || '',
     })
     onClose()
   }
@@ -57,6 +60,15 @@ function ScheduleForm({ vehicleId, existing, onSave, onDelete, onClose }) {
           </label>
         </div>
         <p className="muted form-note">Whichever comes first triggers the reminder. Leave one blank to use only the other.</p>
+        <label>
+          Notes <span className="muted">(optional — e.g. "do this with the tire rotation at the same shop visit")</span>
+          <textarea
+            rows={2}
+            value={form.notes ?? ''}
+            onChange={set('notes')}
+            placeholder="Anything you want to remember about this reminder…"
+          />
+        </label>
         <div className="form-actions">
           {existing && (
             <button
@@ -130,6 +142,7 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
             {vehicle.newDriver && <span className="driver-tag">New driver</span>}
           </h1>
           {vehicle.nickname && <p className="muted">{vehicle.year} {vehicle.make} {vehicle.model}</p>}
+          {vehicle.notes && <p className="vehicle-notes">📝 {vehicle.notes}</p>}
         </div>
         <div className="head-actions">
           <button className="btn" onClick={() => setEditing(true)}>Edit</button>
@@ -148,6 +161,8 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
         />
         <button type="submit" className="btn btn-small">Update</button>
       </form>
+
+      <ManualSection vehicle={vehicle} />
 
       <section>
         <div className="section-head">
@@ -168,6 +183,7 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
                       ? ` · last: ${fmtDate(item.last.date)}${item.last.mileage != null ? ` @ ${fmtMiles(item.last.mileage)} mi` : ''}`
                       : ' · never logged'}
                   </span>
+                  {item.schedule.notes && <span className="due-note">📝 {item.schedule.notes}</span>}
                 </div>
                 <div className="due-actions">
                   {guideId && (
@@ -190,6 +206,8 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
           })}
         </ul>
       </section>
+
+      <PartsSection vehicle={vehicle} schedules={schedules} />
 
       <section>
         <div className="section-head">
@@ -289,6 +307,7 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
             currentMileage: vehicle.currentMileage,
             vin: vehicle.vin ?? '',
             newDriver: Boolean(vehicle.newDriver),
+            notes: vehicle.notes ?? '',
           }}
           onSave={(f) => {
             const { newDriver, ...rest } = f

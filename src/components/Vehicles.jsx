@@ -13,7 +13,7 @@ const titleCase = (s) =>
 
 function VehicleForm({ initial, onSave, onClose }) {
   const [form, setForm] = useState(
-    initial ?? { nickname: '', year: '', make: '', model: '', currentMileage: '', vin: '', newDriver: false },
+    initial ?? { nickname: '', year: '', make: '', model: '', currentMileage: '', vin: '', newDriver: false, notes: '' },
   )
   const [vinState, setVinState] = useState('idle') // idle | busy | error | ok
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }))
@@ -105,6 +105,15 @@ function VehicleForm({ initial, onSave, onClose }) {
           />
           Newer / less experienced driver
           <span className="muted"> — adds a monthly walk-around check and tighter tire & brake intervals</span>
+        </label>
+        <label>
+          Notes <span className="muted">(optional — quirks, reminders, anything worth remembering about this vehicle)</span>
+          <textarea
+            rows={2}
+            value={form.notes ?? ''}
+            onChange={set('notes')}
+            placeholder="e.g. this one's due for state emissions every year in April"
+          />
         </label>
         {!initial && (
           <p className="muted form-note">
