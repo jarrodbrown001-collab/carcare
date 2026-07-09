@@ -1,0 +1,86 @@
+import { useState } from 'react'
+import { Modal } from './ui'
+import { SERVICE_TYPES } from '../lib/serviceTypes'
+import { todayStr } from '../lib/store'
+
+export default function ServiceForm({ vehicles, defaultVehicleId, defaultType, onSave, onClose }) {
+  const [form, setForm] = useState({
+    vehicleId: defaultVehicleId ?? vehicles[0]?.id ?? '',
+    type: defaultType ?? 'oil-change',
+    date: todayStr(),
+    mileage: '',
+    cost: '',
+    diy: false,
+    notes: '',
+  })
+
+  const set = (k) => (e) =>
+    setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
+
+  const vehicle = vehicles.find((v) => v.id === form.vehicleId)
+
+  function submit(e) {
+    e.preventDefault()
+    onSave(form)
+    onClose()
+  }
+
+  return (
+    <Modal title="Log service" onClose={onClose}>
+      <form onSubmit={submit} className="form">
+        {vehicles.length > 1 && (
+          <label>
+            Vehicle
+            <select value={form.vehicleId} onChange={set('vehicleId')} required>
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id}>{v.nickname || `${v.year} ${v.make} ${v.model}`}</option>
+              ))}
+            </select>
+          </label>
+        )}
+        <label>
+          Service
+          <select value={form.type} onChange={set('type')} required>
+            {SERVICE_TYPES.map((t) => (
+              <option key={t.id} value={t.id}>{t.label}</option>
+            ))}
+          </select>
+        </label>
+        <div className="form-row">
+          <label>
+            Date
+            <input type="date" value={form.date} onChange={set('date')} required />
+          </label>
+          <label>
+            Mileage
+            <input
+              type="number"
+              min="0"
+              placeholder={vehicle ? String(vehicle.currentMileage) : ''}
+              value={form.mileage}
+              onChange={set('mileage')}
+            />
+          </label>
+        </div>
+        <div className="form-row">
+          <label>
+            Cost ($)
+            <input type="number" min="0" step="0.01" placeholder="0.00" value={form.cost} onChange={set('cost')} />
+          </label>
+          <label className="check-label">
+            <input type="checkbox" checked={form.diy} onChange={set('diy')} />
+            I did it myself
+          </label>
+        </div>
+        <label>
+          Notes
+          <textarea rows="2" placeholder="Brand, shop, part numbers…" value={form.notes} onChange={set('notes')} />
+        </label>
+        <div className="form-actions">
+          <button type="button" className="btn" onClick={onClose}>Cancel</button>
+          <button type="submit" className="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
