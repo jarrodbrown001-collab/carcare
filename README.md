@@ -17,6 +17,12 @@ between devices with Export/Import in the footer.
 - **Smart reminders** — every vehicle starts with a standard schedule (oil, tires,
   filters, battery, registration…). Each item tracks *miles and/or months, whichever
   comes first*, and shows **Overdue / Due soon / OK** with how far out it is.
+- **Recommended repairs** — a place for shop-identified, non-interval work
+  ("replace front lower control arms," an alignment, anything a mechanic flags
+  that isn't on your routine schedule). Tracks total estimated cost, an optional
+  target date to plan around, and a suggested monthly savings amount; "Done —
+  log it" turns one into a real service record. Lives in its own **Repairs** tab
+  and on each vehicle's detail page.
 - **Cost tracking** — spending by month (stacked by vehicle), by category, plus
   12-month, average, all-time, and DIY-job stats.
 - **Budget forecast** — projects the next 12 months of scheduled maintenance per
@@ -45,8 +51,10 @@ npm run build     # production build in dist/
 |---|---|
 | `src/lib/store.js` | localStorage persistence, actions, due-status logic |
 | `src/lib/forecast.js` | 12-month cost projection & driving-rate estimation |
+| `src/lib/recommendations.js` | cost/savings math for recommended repairs |
 | `src/lib/serviceTypes.js` | catalog of service types + default intervals |
 | `src/data/guides.js` | the DIY tutorial content |
-| `src/components/` | Dashboard, Vehicles, VehicleDetail, Costs, Guides, ServiceForm |
+| `src/components/` | Dashboard, Vehicles, VehicleDetail, Costs, Budget, Recommendations, Guides, ServiceForm |
 
-Data is stored under the `carcare-data-v1` key as `{ vehicles, services, schedules }`.
+Data is stored under the `carcare-data-v1` key as
+`{ vehicles, services, schedules, recommendations }`.

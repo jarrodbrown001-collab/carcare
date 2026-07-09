@@ -2,8 +2,11 @@ import { useState } from 'react'
 import { scheduleStatus, fmtDate } from '../lib/store'
 import { SERVICE_TYPES, serviceLabel, serviceType } from '../lib/serviceTypes'
 import { fmtMiles, fmtMoneyCents } from '../lib/palette'
+import { costRange } from '../lib/recommendations'
 import { StatusPill, dueDetail, Modal } from './ui'
 import { vehicleName, VehicleForm } from './Vehicles'
+import { RecommendationCard, RecommendationForm } from './Recommendations'
+import ServiceForm from './ServiceForm'
 
 function ScheduleForm({ vehicleId, existing, onSave, onDelete, onClose }) {
   const [form, setForm] = useState(
@@ -77,6 +80,17 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
   const [mileageInput, setMileageInput] = useState('')
   const [editing, setEditing] = useState(false)
   const [scheduleModal, setScheduleModal] = useState(null) // 'new' | schedule object
+  const [recModal, setRecModal] = useState(null) // 'new' | recommendation object
+  const [loggingRec, setLoggingRec] = useState(null)
+  const [showResolvedRecs, setShowResolvedRecs] = useState(false)
+
+  const vehicleRecs = data.recommendations.filter((r) => r.vehicleId === vehicle.id)
+  const openRecs = [...vehicleRecs.filter((r) => r.status === 'open')].sort((a, b) => {
+    const da = a.targetDate ? new Date(a.targetDate).getTime() : Infinity
+    const db = b.targetDate ? new Date(b.targetDate).getTime() : Infinity
+    return da - db
+  })
+  const resolvedRecs = vehicleRecs.filter((r) => r.status !== 'open')
 
   const schedules = data.schedules
     .filter((s) => s.vehicleId === vehicle.id)
@@ -179,6 +193,56 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
 
       <section>
         <div className="section-head">
+          <h2>Recommended repairs</h2>
+          <button className="btn btn-small" onClick={() => setRecModal('new')}>+ Add recommendation</button>
+        </div>
+        {openRecs.length === 0 ? (
+          <p className="muted">
+            Nothing flagged. When a shop identifies work outside the routine schedule, add it here to track cost
+            and plan when to do it.
+          </p>
+        ) : (
+          <ul className="due-list">
+            {openRecs.map((rec) => (
+              <RecommendationCard
+                key={rec.id}
+                rec={rec}
+                showVehicle={false}
+                onEdit={() => setRecModal(rec)}
+                onLog={() => setLoggingRec(rec)}
+                onDismiss={() => actions.updateRecommendation(rec.id, { status: 'dismissed' })}
+              />
+            ))}
+          </ul>
+        )}
+        {resolvedRecs.length > 0 && (
+          <>
+            <button
+              className="btn btn-small"
+              style={{ marginTop: 8 }}
+              onClick={() => setShowResolvedRecs((s) => !s)}
+            >
+              {showResolvedRecs ? 'Hide' : 'Show'} done/dismissed ({resolvedRecs.length})
+            </button>
+            {showResolvedRecs && (
+              <ul className="due-list" style={{ marginTop: 8 }}>
+                {resolvedRecs.map((rec) => (
+                  <RecommendationCard
+                    key={rec.id}
+                    rec={rec}
+                    showVehicle={false}
+                    onRestore={() => actions.updateRecommendation(rec.id, { status: 'open' })}
+                    onDelete={() => window.confirm('Delete this recommendation?') && actions.deleteRecommendation(rec.id)}
+                  />
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+      </section>
+
+      <section>
+        <div className="section-head">
           <h2>Service history</h2>
           <button className="btn btn-small btn-primary" onClick={() => onLogService(vehicle.id)}>+ Log service</button>
         </div>
@@ -251,6 +315,41 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
           onSave={(f) => actions.updateSchedule(scheduleModal.id, f)}
           onDelete={(id) => actions.deleteSchedule(id)}
           onClose={() => setScheduleModal(null)}
+        />
+      )}
+
+      {recModal === 'new' && (
+        <RecommendationForm
+          vehicles={[vehicle]}
+          defaultVehicleId={vehicle.id}
+          onSave={(f) => actions.addRecommendation(f)}
+          onClose={() => setRecModal(null)}
+        />
+      )}
+      {recModal && recModal !== 'new' && (
+        <RecommendationForm
+          vehicles={[vehicle]}
+          existing={recModal}
+          onSave={(f) => actions.updateRecommendation(recModal.id, f)}
+          onClose={() => setRecModal(null)}
+        />
+      )}
+      {loggingRec && (
+        <ServiceForm
+          vehicles={[vehicle]}
+          defaultVehicleId={vehicle.id}
+          defaultType="repair"
+          defaultNotes={[loggingRec.title, loggingRec.source].filter(Boolean).join(' — ')}
+          defaultCost={costRange(loggingRec) ? Math.round(costRange(loggingRec).mid) : ''}
+          onSave={(form) => {
+            const service = actions.addService(form)
+            actions.updateRecommendation(loggingRec.id, {
+              status: 'done',
+              resolvedServiceId: service.id,
+              resolvedDate: service.date,
+            })
+          }}
+          onClose={() => setLoggingRec(null)}
         />
       )}
     </div>

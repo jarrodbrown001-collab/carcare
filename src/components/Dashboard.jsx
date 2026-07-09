@@ -2,6 +2,7 @@ import { dueItems, fmtDate } from '../lib/store'
 import { serviceLabel, serviceType } from '../lib/serviceTypes'
 import { fmtMoney } from '../lib/palette'
 import { downloadCalendar } from '../lib/ics'
+import { summarize } from '../lib/recommendations'
 import { StatusPill, dueDetail, EmptyState } from './ui'
 
 function vehicleName(v) {
@@ -28,6 +29,7 @@ export default function Dashboard({ data, navigate, onLogService }) {
 
   const due = dueItems(data)
   const overdueCount = due.filter((d) => d.status === 'overdue').length
+  const recSummary = summarize(data)
   const year = new Date().getFullYear()
   const spentThisYear = services
     .filter((s) => s.date.startsWith(String(year)) && s.cost != null)
@@ -69,6 +71,13 @@ export default function Dashboard({ data, navigate, onLogService }) {
           <div className="stat-label">Spent in {year}</div>
           <div className="stat-value">{fmtMoney(spentThisYear)}</div>
         </div>
+        {recSummary.count > 0 && (
+          <button className="stat-tile stat-tile-btn" onClick={() => navigate('repairs')}>
+            <div className="stat-label">Recommended repairs</div>
+            <div className="stat-value">{recSummary.count}</div>
+            <div className="stat-note muted">{fmtMoney(recSummary.totalCost)} estimated</div>
+          </button>
+        )}
       </div>
 
       <section>

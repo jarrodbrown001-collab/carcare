@@ -3,15 +3,23 @@ import { Modal } from './ui'
 import { SERVICE_TYPES } from '../lib/serviceTypes'
 import { todayStr } from '../lib/store'
 
-export default function ServiceForm({ vehicles, defaultVehicleId, defaultType, onSave, onClose }) {
+export default function ServiceForm({
+  vehicles,
+  defaultVehicleId,
+  defaultType,
+  defaultNotes,
+  defaultCost,
+  onSave,
+  onClose,
+}) {
   const [form, setForm] = useState({
     vehicleId: defaultVehicleId ?? vehicles[0]?.id ?? '',
     type: defaultType ?? 'oil-change',
     date: todayStr(),
     mileage: '',
-    cost: '',
+    cost: defaultCost != null && defaultCost !== '' ? String(defaultCost) : '',
     diy: false,
-    notes: '',
+    notes: defaultNotes ?? '',
   })
 
   const set = (k) => (e) =>

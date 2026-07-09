@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { DEFAULT_SCHEDULE_TYPES, serviceType } from './serviceTypes'
 
 const STORAGE_KEY = 'carcare-data-v1'
-const EMPTY = { vehicles: [], services: [], schedules: [] }
+const EMPTY = { vehicles: [], services: [], schedules: [], recommendations: [] }
 
 export function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
@@ -142,6 +142,7 @@ export function useAppData() {
           vehicles: d.vehicles.filter((v) => v.id !== id),
           services: d.services.filter((s) => s.vehicleId !== id),
           schedules: d.schedules.filter((s) => s.vehicleId !== id),
+          recommendations: d.recommendations.filter((r) => r.vehicleId !== id),
         }))
       },
 
@@ -192,6 +193,34 @@ export function useAppData() {
 
       deleteSchedule(id) {
         setData((d) => ({ ...d, schedules: d.schedules.filter((s) => s.id !== id) }))
+      },
+
+      // Shop-identified or self-noticed work that isn't on a standard
+      // interval — e.g. "replace front lower control arms". Tracked
+      // separately from the reminder schedule so cost/timing can be
+      // planned for before it's ever logged as done.
+      addRecommendation(fields) {
+        const rec = {
+          id: uid(),
+          status: 'open',
+          resolvedServiceId: null,
+          resolvedDate: null,
+          ...fields,
+          dateIdentified: fields.dateIdentified || todayStr(),
+        }
+        setData((d) => ({ ...d, recommendations: [...d.recommendations, rec] }))
+        return rec
+      },
+
+      updateRecommendation(id, patch) {
+        setData((d) => ({
+          ...d,
+          recommendations: d.recommendations.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+        }))
+      },
+
+      deleteRecommendation(id) {
+        setData((d) => ({ ...d, recommendations: d.recommendations.filter((r) => r.id !== id) }))
       },
 
       importData(json) {

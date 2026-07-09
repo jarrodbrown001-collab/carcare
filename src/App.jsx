@@ -1,15 +1,18 @@
 import { useRef, useState } from 'react'
 import { useAppData, dueItems } from './lib/store'
+import { openRecommendations } from './lib/recommendations'
 import Dashboard from './components/Dashboard'
 import Vehicles from './components/Vehicles'
 import Costs from './components/Costs'
 import Budget from './components/Budget'
+import Recommendations from './components/Recommendations'
 import Guides from './components/Guides'
 import ServiceForm from './components/ServiceForm'
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard' },
   { id: 'vehicles', label: 'Vehicles' },
+  { id: 'repairs', label: 'Repairs' },
   { id: 'costs', label: 'Costs' },
   { id: 'budget', label: 'Budget' },
   { id: 'guides', label: 'DIY Guides' },
@@ -25,6 +28,7 @@ export default function App() {
   const onLogService = (vehicleId, type) => setServiceModal({ vehicleId, type })
 
   const attention = dueItems(data).length
+  const openRepairs = openRecommendations(data).length
 
   function exportBackup() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -67,6 +71,7 @@ export default function App() {
             >
               {t.label}
               {t.id === 'dashboard' && attention > 0 && <span className="tab-badge">{attention}</span>}
+              {t.id === 'repairs' && openRepairs > 0 && <span className="tab-badge">{openRepairs}</span>}
             </button>
           ))}
         </nav>
@@ -85,6 +90,7 @@ export default function App() {
             onLogService={onLogService}
           />
         )}
+        {view.name === 'repairs' && <Recommendations data={data} actions={actions} />}
         {view.name === 'costs' && <Costs data={data} />}
         {view.name === 'budget' && <Budget data={data} />}
         {view.name === 'guides' && <Guides params={view.params} navigate={navigate} />}
