@@ -12,11 +12,13 @@ export default function ServiceForm({
   onSave,
   onClose,
 }) {
+  const initialVehicleId = defaultVehicleId ?? vehicles[0]?.id ?? ''
+  const initialVehicle = vehicles.find((v) => v.id === initialVehicleId)
   const [form, setForm] = useState({
-    vehicleId: defaultVehicleId ?? vehicles[0]?.id ?? '',
+    vehicleId: initialVehicleId,
     type: defaultType ?? 'oil-change',
     date: todayStr(),
-    mileage: '',
+    mileage: initialVehicle ? String(initialVehicle.currentMileage) : '',
     cost: defaultCost != null && defaultCost !== '' ? String(defaultCost) : '',
     diy: false,
     notes: defaultNotes ?? '',
@@ -24,6 +26,12 @@ export default function ServiceForm({
 
   const set = (k) => (e) =>
     setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }))
+
+  function selectVehicle(e) {
+    const id = e.target.value
+    const v = vehicles.find((veh) => veh.id === id)
+    setForm((f) => ({ ...f, vehicleId: id, mileage: v ? String(v.currentMileage) : f.mileage }))
+  }
 
   const vehicle = vehicles.find((v) => v.id === form.vehicleId)
 
@@ -39,7 +47,7 @@ export default function ServiceForm({
         {vehicles.length > 1 && (
           <label>
             Vehicle
-            <select value={form.vehicleId} onChange={set('vehicleId')} required>
+            <select value={form.vehicleId} onChange={selectVehicle} required>
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>{v.nickname || `${v.year} ${v.make} ${v.model}`}</option>
               ))}
