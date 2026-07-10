@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { scheduleStatus, fmtDate } from '../lib/store'
+import { scheduleStatus, fmtDate, daysUntil } from '../lib/store'
 import { SERVICE_TYPES, serviceLabel, serviceType } from '../lib/serviceTypes'
 import { fmtMiles, fmtMoneyCents } from '../lib/palette'
 import { costRange } from '../lib/recommendations'
@@ -9,6 +9,7 @@ import { RecommendationCard, RecommendationForm } from './Recommendations'
 import ServiceForm from './ServiceForm'
 import ManualSection from './Manual'
 import PartsSection from './Parts'
+import RecallsSection from './Recalls'
 
 function ScheduleForm({ vehicleId, existing, onSave, onDelete, onClose }) {
   const [form, setForm] = useState(
@@ -95,6 +96,12 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
   const [recModal, setRecModal] = useState(null) // 'new' | recommendation object
   const [loggingRec, setLoggingRec] = useState(null)
   const [showResolvedRecs, setShowResolvedRecs] = useState(false)
+  const [historyType, setHistoryType] = useState('all')
+  const [historySearch, setHistorySearch] = useState('')
+
+  // Days since the odometer was last touched (mileage update, service log,
+  // or fill-up all stamp it). Old data quietly rots the reminder math.
+  const mileageAgeDays = vehicle.mileageUpdatedAt ? -daysUntil(vehicle.mileageUpdatedAt) : null
 
   const vehicleRecs = data.recommendations.filter((r) => r.vehicleId === vehicle.id)
   const openRecs = [...vehicleRecs.filter((r) => r.status === 'open')].sort((a, b) => {
@@ -112,9 +119,19 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
       return rank[a.status] - rank[b.status]
     })
 
-  const history = data.services
+  const fullHistory = data.services
     .filter((s) => s.vehicleId === vehicle.id)
     .sort((a, b) => (a.date < b.date ? 1 : -1))
+
+  const historyTypes = [...new Set(fullHistory.map((s) => s.type))]
+  const q = historySearch.trim().toLowerCase()
+  const history = fullHistory.filter((s) => {
+    if (historyType !== 'all' && s.type !== historyType) return false
+    if (!q) return true
+    return [s.notes, s.partsUsed, s.by, serviceLabel(s.type)]
+      .filter(Boolean)
+      .some((field) => field.toLowerCase().includes(q))
+  })
 
   function updateMileage(e) {
     e.preventDefault()
@@ -160,9 +177,16 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
           onChange={(e) => setMileageInput(e.target.value)}
         />
         <button type="submit" className="btn btn-small">Update</button>
+        {mileageAgeDays != null && mileageAgeDays > 30 && (
+          <span className="mileage-stale">
+            ⚠ odometer last updated {mileageAgeDays} days ago — reminders may be behind
+          </span>
+        )}
       </form>
 
       <ManualSection vehicle={vehicle} actions={actions} />
+
+      <RecallsSection vehicle={vehicle} />
 
       <section>
         <div className="section-head">
@@ -264,10 +288,31 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
           <h2>Service history</h2>
           <button className="btn btn-small btn-primary" onClick={() => onLogService(vehicle.id)}>+ Log service</button>
         </div>
-        {history.length === 0 ? (
+        {fullHistory.length > 5 && (
+          <div className="filter-row">
+            <select className="filter-select" value={historyType} onChange={(e) => setHistoryType(e.target.value)}>
+              <option value="all">All types</option>
+              {historyTypes.map((t) => (
+                <option key={t} value={t}>{serviceLabel(t)}</option>
+              ))}
+            </select>
+            <input
+              className="filter-search"
+              placeholder="Search notes, parts, who…"
+              value={historySearch}
+              onChange={(e) => setHistorySearch(e.target.value)}
+            />
+            {(historyType !== 'all' || q) && (
+              <span className="muted">{history.length} of {fullHistory.length}</span>
+            )}
+          </div>
+        )}
+        {fullHistory.length === 0 ? (
           <p className="muted">
             Nothing logged yet. Add past services (even rough dates) so reminders count from the right baseline.
           </p>
+        ) : history.length === 0 ? (
+          <p className="muted">No records match that filter.</p>
         ) : (
           <table className="table">
             <thead>
@@ -280,7 +325,11 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
                   <td>{serviceLabel(s.type)}{s.diy && <span className="diy-tag">DIY</span>}</td>
                   <td className="num">{s.mileage != null ? fmtMiles(s.mileage) : '—'}</td>
                   <td className="num">{s.cost != null ? fmtMoneyCents(s.cost) : '—'}</td>
-                  <td className="notes-cell">{s.notes}</td>
+                  <td className="notes-cell">
+                    {s.notes}
+                    {s.partsUsed && <span className="history-extra">🔩 {s.partsUsed}</span>}
+                    {s.by && <span className="history-extra">👤 {s.by}</span>}
+                  </td>
                   <td>
                     <button
                       className="btn-icon"

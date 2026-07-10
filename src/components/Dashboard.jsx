@@ -1,9 +1,12 @@
+import { useState } from 'react'
 import { dueItems, fmtDate } from '../lib/store'
 import { serviceLabel, serviceType } from '../lib/serviceTypes'
 import { fmtMoney } from '../lib/palette'
 import { downloadCalendar } from '../lib/ics'
 import { summarize } from '../lib/recommendations'
+import { notificationsSupported, notificationsEnabled, enableNotifications, disableNotifications } from '../lib/notify'
 import { StatusPill, dueDetail, EmptyState } from './ui'
+import ShopDue from './ShopDue'
 
 function vehicleName(v) {
   return v.nickname || `${v.year} ${v.make} ${v.model}`
@@ -11,6 +14,19 @@ function vehicleName(v) {
 
 export default function Dashboard({ data, navigate, onLogService }) {
   const { vehicles, services } = data
+  const [shopping, setShopping] = useState(false)
+  const [notifyOn, setNotifyOn] = useState(notificationsEnabled())
+
+  async function toggleNotifications() {
+    if (notifyOn) {
+      disableNotifications()
+      setNotifyOn(false)
+    } else {
+      const ok = await enableNotifications()
+      setNotifyOn(ok)
+      if (!ok) alert('Notifications are blocked for this site — allow them in your browser settings and try again.')
+    }
+  }
 
   if (vehicles.length === 0) {
     return (
@@ -41,6 +57,18 @@ export default function Dashboard({ data, navigate, onLogService }) {
       <div className="page-head">
         <h1>Dashboard</h1>
         <div className="head-actions">
+          {notificationsSupported() && (
+            <button
+              className="btn"
+              title={notifyOn ? 'Notifications on — you get a heads-up when the app opens with items due' : 'Get a notification when the app opens with items due'}
+              onClick={toggleNotifications}
+            >
+              {notifyOn ? '🔔 On' : '🔕 Notify me'}
+            </button>
+          )}
+          {due.length > 0 && (
+            <button className="btn" onClick={() => setShopping(true)}>🛒 Shop due items</button>
+          )}
           <button
             className="btn"
             title="Download upcoming maintenance as calendar events (.ics) — import into Google Calendar"
@@ -143,6 +171,8 @@ export default function Dashboard({ data, navigate, onLogService }) {
           </table>
         )}
       </section>
+
+      {shopping && <ShopDue data={data} onClose={() => setShopping(false)} />}
     </div>
   )
 }

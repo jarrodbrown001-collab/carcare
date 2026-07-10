@@ -22,6 +22,8 @@ export default function ServiceForm({
     cost: defaultCost != null && defaultCost !== '' ? String(defaultCost) : '',
     diy: false,
     notes: defaultNotes ?? '',
+    partsUsed: '',
+    by: '',
   })
 
   const set = (k) => (e) =>
@@ -92,6 +94,20 @@ export default function ServiceForm({
           Notes
           <textarea rows="2" placeholder="Brand, shop, part numbers…" value={form.notes} onChange={set('notes')} />
         </label>
+        <div className="form-row">
+          <label>
+            Parts used <span className="muted">(optional)</span>
+            <input
+              placeholder="e.g. 90915-YZZD4 filter + 7qt Mobil 1 — $54"
+              value={form.partsUsed}
+              onChange={set('partsUsed')}
+            />
+          </label>
+          <label>
+            Logged by <span className="muted">(optional)</span>
+            <input placeholder="e.g. Jarrod" value={form.by} onChange={set('by')} />
+          </label>
+        </div>
         <div className="form-actions">
           <button type="button" className="btn" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn btn-primary">Save</button>

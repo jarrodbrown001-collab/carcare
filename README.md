@@ -31,11 +31,27 @@ between devices with Export/Import in the footer.
 - **Quote check (upsell protection)** — enter what a shop quoted; the app flags
   anything that isn't actually due per your log and compares the price to your
   history / typical ranges.
-- **DIY guides** — 10 built-in step-by-step tutorials rated Easy → Advanced, with
+- **Fuel & MPG log** — record fill-ups (odometer, gallons, cost); MPG per tank,
+  running average, and price-per-gallon are computed automatically.
+- **Owner's manual on file** — per-vehicle VIN entry, step-by-step instructions
+  for downloading the manual from the manufacturer's owner portal, and PDF
+  storage in the browser. Parts specs sourced from the manual link straight to
+  the right page of the stored PDF.
+- **Parts & shopping** — spec + OEM part number per maintenance item (marked
+  when sourced from the actual owner's manual), with live links to price
+  comparison, retailers, and YouTube DIY video searches. A dashboard
+  "Shop due items" view aggregates parts for everything currently due.
+- **Safety recalls** — on-demand check of the official NHTSA recall database
+  per vehicle.
+- **DIY guides** — 13 built-in step-by-step tutorials rated Easy → Advanced, with
   tools, time, savings, and safety notes. Reminder rows link straight to the
   matching guide.
+- **Reminders & nudges** — optional browser notification when the app opens
+  with items due, a banner when your backup is stale, and a warning when a
+  vehicle's odometer hasn't been updated in over a month.
 - **Local & private** — everything lives in your browser's localStorage. Export /
-  import a JSON backup from the footer.
+  import a JSON backup from the footer, or move data between devices with the
+  copy/paste "Transfer devices" flow.
 
 ## Running it
 
@@ -57,4 +73,6 @@ npm run build     # production build in dist/
 | `src/components/` | Dashboard, Vehicles, VehicleDetail, Costs, Budget, Recommendations, Guides, ServiceForm |
 
 Data is stored under the `carcare-data-v1` key as
-`{ vehicles, services, schedules, recommendations }`.
+`{ vehicles, services, schedules, recommendations, fillups }`. Owner's-manual
+PDFs live separately in IndexedDB (`carcare-manuals`) and are not part of the
+JSON backup.

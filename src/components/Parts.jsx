@@ -1,11 +1,24 @@
 import { serviceLabel, serviceType } from '../lib/serviceTypes'
 import { partInfoFor, vehicleProfile } from '../data/partsCatalog'
 import { shopLinks, youtubeSearchLink } from '../lib/partsLookup'
+import { getManual, manualToBlobUrl } from '../lib/manualStore'
 import { GUIDES } from '../data/guides'
 
 function guideFor(serviceTypeId) {
   const guideId = serviceType(serviceTypeId)?.guideId
   return guideId ? GUIDES.find((g) => g.id === guideId) : null
+}
+
+// Chrome's PDF viewer honors #page= on blob URLs, so this jumps the stored
+// manual straight to the page the spec came from.
+async function openManualPage(vehicleId, page) {
+  const rec = await getManual(vehicleId)
+  if (!rec) {
+    alert("No manual PDF uploaded for this vehicle yet — add one in the Owner's manual section above.")
+    return
+  }
+  const url = manualToBlobUrl(rec)
+  window.open(`${url}#page=${page}`, '_blank', 'noopener')
 }
 
 function PartCard({ vehicle, serviceTypeId }) {
@@ -46,6 +59,11 @@ function PartCard({ vehicle, serviceTypeId }) {
         <a className="btn btn-small" href={ytLink} target="_blank" rel="noopener noreferrer">
           ▶ DIY videos ↗
         </a>
+        {info?.manualPage && (
+          <button className="btn btn-small" onClick={() => openManualPage(vehicle.id, info.manualPage)}>
+            📖 Manual p.{info.manualPage}
+          </button>
+        )}
       </div>
       <p className="parts-source-note">Always confirm fitment against your VIN before buying.</p>
     </li>

@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { DEFAULT_SCHEDULE_TYPES, serviceType } from './serviceTypes'
 
 const STORAGE_KEY = 'carcare-data-v1'
-const EMPTY = { vehicles: [], services: [], schedules: [], recommendations: [] }
+const LAST_BACKUP_KEY = 'carcare-last-backup'
+const EMPTY = { vehicles: [], services: [], schedules: [], recommendations: [], fillups: [] }
 
 export function uid() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36)
@@ -152,7 +153,7 @@ export function useAppData() {
         setData((d) => ({
           ...d,
           vehicles: d.vehicles.map((v) =>
-            v.id === vehicleId ? { ...v, currentMileage: m } : v,
+            v.id === vehicleId ? { ...v, currentMileage: m, mileageUpdatedAt: todayStr() } : v,
           ),
         }))
       },
@@ -168,12 +169,38 @@ export function useAppData() {
         setData((d) => {
           const vehicles = d.vehicles.map((v) =>
             v.id === service.vehicleId && service.mileage != null && service.mileage > v.currentMileage
-              ? { ...v, currentMileage: service.mileage }
+              ? { ...v, currentMileage: service.mileage, mileageUpdatedAt: todayStr() }
               : v,
           )
           return { ...d, vehicles, services: [...d.services, service] }
         })
         return service
+      },
+
+      // Gas fill-ups — kept separate from services so MPG math and fuel
+      // spend don't pollute the maintenance history.
+      addFillup(fields) {
+        const fillup = {
+          id: uid(),
+          date: todayStr(),
+          ...fields,
+          mileage: fields.mileage === '' || fields.mileage == null ? null : Number(fields.mileage),
+          gallons: fields.gallons === '' || fields.gallons == null ? null : Number(fields.gallons),
+          cost: fields.cost === '' || fields.cost == null ? null : Number(fields.cost),
+        }
+        setData((d) => {
+          const vehicles = d.vehicles.map((v) =>
+            v.id === fillup.vehicleId && fillup.mileage != null && fillup.mileage > v.currentMileage
+              ? { ...v, currentMileage: fillup.mileage, mileageUpdatedAt: todayStr() }
+              : v,
+          )
+          return { ...d, vehicles, fillups: [...d.fillups, fillup] }
+        })
+        return fillup
+      },
+
+      deleteFillup(id) {
+        setData((d) => ({ ...d, fillups: d.fillups.filter((f) => f.id !== id) }))
       },
 
       deleteService(id) {
@@ -237,6 +264,21 @@ export function useAppData() {
   )
 
   return { data, actions }
+}
+
+// Backup freshness — stamped when the user exports, read for the nudge banner.
+export function lastBackupAt() {
+  const v = localStorage.getItem(LAST_BACKUP_KEY)
+  return v ? Number(v) : null
+}
+
+export function markBackupDone() {
+  localStorage.setItem(LAST_BACKUP_KEY, String(Date.now()))
+}
+
+export function daysSince(timestamp) {
+  if (!timestamp) return null
+  return Math.floor((Date.now() - timestamp) / 86400000)
 }
 
 // Compute due status for one reminder schedule.
