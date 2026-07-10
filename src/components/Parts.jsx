@@ -1,6 +1,6 @@
 import { serviceLabel, serviceType } from '../lib/serviceTypes'
 import { partInfoFor, vehicleProfile } from '../data/partsCatalog'
-import { shopLinks } from '../lib/partsLookup'
+import { shopLinks, youtubeSearchLink } from '../lib/partsLookup'
 import { GUIDES } from '../data/guides'
 
 function guideFor(serviceTypeId) {
@@ -14,11 +14,13 @@ function PartCard({ vehicle, serviceTypeId }) {
   const label = serviceLabel(serviceTypeId)
   const query = info?.partNumber || info?.name || label
   const links = shopLinks(vehicle, query)
+  const ytLink = youtubeSearchLink(vehicle, label)
 
   return (
     <li className="parts-card">
       <div className="parts-card-head">
         <strong>{label}</strong>
+        {info?.source && <span className="parts-source-badge">from {info.source}</span>}
       </div>
       {info ? (
         <>
@@ -41,6 +43,9 @@ function PartCard({ vehicle, serviceTypeId }) {
             {l.name} ↗
           </a>
         ))}
+        <a className="btn btn-small" href={ytLink} target="_blank" rel="noopener noreferrer">
+          ▶ DIY videos ↗
+        </a>
       </div>
       <p className="parts-source-note">Always confirm fitment against your VIN before buying.</p>
     </li>
@@ -51,9 +56,11 @@ export default function PartsSection({ vehicle, schedules }) {
   const profile = vehicleProfile(vehicle)
   // Only show parts for reminder types that actually involve a physical part.
   const partTypes = ['oil-change', 'engine-air-filter', 'cabin-air-filter', 'wiper-blades', 'battery', 'brake-pads', 'differential-fluid', 'transmission-fluid', 'brake-fluid', 'coolant', 'spark-plugs']
-  const relevant = schedules
-    .map((s) => s.schedule.type)
-    .filter((t, i, arr) => arr.indexOf(t) === i && partTypes.includes(t))
+  const scheduleTypes = schedules.map((s) => s.schedule.type).filter((t) => partTypes.includes(t))
+  // Include everything we have real manual-sourced data for too, even if it
+  // isn't on an active reminder schedule (e.g. spark plugs, coolant).
+  const profileTypes = profile ? Object.keys(profile.parts) : []
+  const relevant = [...new Set([...scheduleTypes, ...profileTypes])]
 
   if (relevant.length === 0) return null
 

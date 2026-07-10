@@ -279,6 +279,7 @@ p { margin: 0 0 10px; }
 .parts-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
 .parts-materials { font-size: 13px; margin-top: 8px; color: var(--ink-2); }
 .parts-source-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.parts-source-badge { font-size: 11px; color: var(--ok-text); background: var(--ok-bg); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
 .due-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* ---------- Tables ---------- */
