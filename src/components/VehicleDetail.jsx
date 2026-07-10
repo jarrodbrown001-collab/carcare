@@ -162,7 +162,7 @@ export default function VehicleDetail({ vehicle, data, actions, navigate, onLogS
         <button type="submit" className="btn btn-small">Update</button>
       </form>
 
-      <ManualSection vehicle={vehicle} />
+      <ManualSection vehicle={vehicle} actions={actions} />
 
       <section>
         <div className="section-head">

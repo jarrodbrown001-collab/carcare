@@ -2,7 +2,34 @@ import { useEffect, useRef, useState } from 'react'
 import { manualSourceFor } from '../data/manualSources'
 import { saveManual, getManual, deleteManual, manualToBlobUrl } from '../lib/manualStore'
 
-export default function ManualSection({ vehicle }) {
+function VinField({ vehicle, actions }) {
+  const [vin, setVin] = useState(vehicle.vin ?? '')
+  const dirty = vin !== (vehicle.vin ?? '')
+
+  function save() {
+    actions.updateVehicle(vehicle.id, { vin: vin.trim().toUpperCase() })
+  }
+
+  return (
+    <label className="vin-field">
+      VIN
+      <span className="vin-row">
+        <input
+          value={vin}
+          onChange={(e) => setVin(e.target.value)}
+          placeholder="17-character VIN"
+          maxLength={17}
+          autoCapitalize="characters"
+        />
+        <button className="btn btn-small" onClick={save} disabled={!dirty}>
+          {vehicle.vin ? 'Update' : 'Save'}
+        </button>
+      </span>
+    </label>
+  )
+}
+
+export default function ManualSection({ vehicle, actions }) {
   const [record, setRecord] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showSteps, setShowSteps] = useState(false)
@@ -53,6 +80,8 @@ export default function ManualSection({ vehicle }) {
         The manufacturer's own manual is the most reliable source for what your vehicle actually needs — a
         real reference point when a shop recommends something that isn't in the book.
       </p>
+
+      <VinField vehicle={vehicle} actions={actions} />
 
       {!loading && record && (
         <div className="due-row">

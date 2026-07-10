@@ -168,7 +168,7 @@ p { margin: 0 0 10px; }
 .form-row { display: flex; gap: 12px; }
 .form-note { font-size: 13px; margin: 0; font-weight: 400; }
 
-.form input, .form select, .form textarea, .filter-select, .mileage-bar input {
+.form input, .form select, .form textarea, .filter-select, .mileage-bar input, .vin-field input {
   font: inherit;
   font-weight: 400;
   padding: 8px 10px;
@@ -352,6 +352,21 @@ p { margin: 0 0 10px; }
 }
 .mileage-current { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .mileage-bar input { width: 170px; }
+
+.vin-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.vin-field .vin-row { flex: 1; max-width: 320px; }
+.vin-field input { text-transform: uppercase; }
 
 /* ---------- Charts ---------- */
 .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
