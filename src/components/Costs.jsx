@@ -4,8 +4,8 @@ import {
 } from 'recharts'
 import { CATEGORICAL, CHROME, useDarkMode, fmtMoney, fmtMoneyCents } from '../lib/palette'
 import { serviceLabel } from '../lib/serviceTypes'
+import { vehicleName } from '../lib/labels'
 import { EmptyState } from './ui'
-import { vehicleName } from './Vehicles'
 
 function lastTwelveMonths() {
   const months = []

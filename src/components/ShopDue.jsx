@@ -2,8 +2,8 @@ import { dueItems } from '../lib/store'
 import { serviceLabel } from '../lib/serviceTypes'
 import { partInfoFor } from '../data/partsCatalog'
 import { shopLinks, youtubeSearchLink } from '../lib/partsLookup'
-import { Modal, dueDetail } from './ui'
-import { vehicleName } from './Vehicles'
+import { vehicleName, dueDetail } from '../lib/labels'
+import { Modal } from './ui'
 
 // One place to shop for everything that's currently due, instead of opening
 // each vehicle page and hunting for the right part card.

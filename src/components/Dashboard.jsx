@@ -5,12 +5,9 @@ import { fmtMoney } from '../lib/palette'
 import { downloadCalendar } from '../lib/ics'
 import { summarize } from '../lib/recommendations'
 import { notificationsSupported, notificationsEnabled, enableNotifications, disableNotifications } from '../lib/notify'
-import { StatusPill, dueDetail, EmptyState } from './ui'
+import { vehicleName, dueDetail } from '../lib/labels'
+import { StatusPill, EmptyState } from './ui'
 import ShopDue from './ShopDue'
-
-function vehicleName(v) {
-  return v.nickname || `${v.year} ${v.make} ${v.model}`
-}
 
 export default function Dashboard({ data, navigate, onLogService }) {
   const { vehicles, services } = data

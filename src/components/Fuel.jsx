@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { fmtDate, todayStr } from '../lib/store'
 import { fmtMiles, fmtMoneyCents } from '../lib/palette'
 import { vehicleFillups, withMpg, fuelStats } from '../lib/fuel'
+import { vehicleName } from '../lib/labels'
 import { Modal, EmptyState } from './ui'
-import { vehicleName } from './Vehicles'
 
 function FillupForm({ vehicles, defaultVehicleId, onSave, onClose }) {
   const initialId = defaultVehicleId ?? vehicles[0]?.id ?? ''

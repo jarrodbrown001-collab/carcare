@@ -3,11 +3,8 @@ import { Modal, EmptyState } from './ui'
 import { fmtDate, todayStr } from '../lib/store'
 import { fmtMoney, fmtMiles } from '../lib/palette'
 import { costRange, recStatusInfo, summarize } from '../lib/recommendations'
+import { vehicleName } from '../lib/labels'
 import ServiceForm from './ServiceForm'
-
-function vehicleName(v) {
-  return v.nickname || `${v.year} ${v.make} ${v.model}`
-}
 
 export function RecommendationForm({ vehicles, defaultVehicleId, existing, onSave, onClose }) {
   const [form, setForm] = useState(() =>

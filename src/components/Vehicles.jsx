@@ -2,11 +2,8 @@ import { useState } from 'react'
 import { Modal, EmptyState } from './ui'
 import { fmtMiles } from '../lib/palette'
 import { dueItems } from '../lib/store'
+import { vehicleName } from '../lib/labels'
 import VehicleDetail from './VehicleDetail'
-
-export function vehicleName(v) {
-  return v.nickname || `${v.year} ${v.make} ${v.model}`
-}
 
 const titleCase = (s) =>
   s.toLowerCase().replace(/\b[a-z]/g, (c) => c.toUpperCase())

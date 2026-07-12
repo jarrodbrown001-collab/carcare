@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { forecastVehicle, whenLabel, typicalCost, milesPerMonth } from '../lib/forecast'
+import { forecastVehicle, whenLabel, typicalCost } from '../lib/forecast'
 import { scheduleStatus } from '../lib/store'
 import { SERVICE_TYPES, serviceLabel } from '../lib/serviceTypes'
 import { fmtMoney, fmtMiles } from '../lib/palette'
-import { EmptyState, dueDetail } from './ui'
-import { vehicleName } from './Vehicles'
+import { vehicleName, dueDetail } from '../lib/labels'
+import { EmptyState } from './ui'
 
 function CostSource({ cost }) {
   if (!cost) return <span className="muted">no estimate</span>
