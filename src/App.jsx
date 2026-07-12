@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAppData, dueItems, lastBackupAt, markBackupDone, daysSince } from './lib/store'
 import { openRecommendations } from './lib/recommendations'
+import { buildSampleData } from './lib/sampleData'
 import { maybeNotifyDue } from './lib/notify'
 import Dashboard from './components/Dashboard'
 import Vehicles from './components/Vehicles'
@@ -116,7 +117,12 @@ export default function App() {
 
       <main className="content">
         {view.name === 'dashboard' && (
-          <Dashboard data={data} navigate={navigate} onLogService={onLogService} />
+          <Dashboard
+            data={data}
+            navigate={navigate}
+            onLogService={onLogService}
+            onLoadSample={() => actions.importData(JSON.stringify(buildSampleData()))}
+          />
         )}
         {view.name === 'vehicles' && (
           <Vehicles

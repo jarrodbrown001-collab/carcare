@@ -9,7 +9,7 @@ import { vehicleName, dueDetail } from '../lib/labels'
 import { StatusPill, EmptyState } from './ui'
 import ShopDue from './ShopDue'
 
-export default function Dashboard({ data, navigate, onLogService }) {
+export default function Dashboard({ data, navigate, onLogService, onLoadSample }) {
   const { vehicles, services } = data
   const [shopping, setShopping] = useState(false)
   const [notifyOn, setNotifyOn] = useState(notificationsEnabled())
@@ -32,9 +32,20 @@ export default function Dashboard({ data, navigate, onLogService }) {
         title="Welcome to CarCare"
         body="Track maintenance, get reminders before things are overdue, see what you're spending, and learn to do the easy jobs yourself. Start by adding a vehicle."
         action={
-          <button className="btn btn-primary" onClick={() => navigate('vehicles', { adding: true })}>
-            Add your first vehicle
-          </button>
+          <div className="welcome-actions">
+            <div className="btn-row">
+              <button className="btn btn-primary" onClick={() => navigate('vehicles', { adding: true })}>
+                Add your first vehicle
+              </button>
+              <button className="btn" onClick={onLoadSample}>
+                Try it with a sample car
+              </button>
+            </div>
+            <p className="muted welcome-privacy">
+              🔒 Everything you enter stays on this device — no account, no server, nothing
+              leaves your browser. The sample car is example data you can delete anytime.
+            </p>
+          </div>
         }
       />
     )

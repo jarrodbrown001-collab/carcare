@@ -5,8 +5,10 @@ get reminded before things are overdue, see what you're spending, and learn to d
 the easy jobs yourself.
 
 **Live app:** https://jarrodbrown001-collab.github.io/carcare/ — installable on
-phones via "Add to Home Screen". Data stays in each device's browser; move it
-between devices with Export/Import in the footer.
+phones via "Add to Home Screen", and works offline once loaded (service worker
+precaches the app). Data stays in each device's browser; move it between
+devices with Export/Import in the footer. First-time visitors can load a
+sample car from the welcome screen to explore before entering their own data.
 
 ## Features
 

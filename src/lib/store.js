@@ -140,10 +140,12 @@ export function useAppData() {
 
       deleteVehicle(id) {
         setData((d) => ({
+          ...d,
           vehicles: d.vehicles.filter((v) => v.id !== id),
           services: d.services.filter((s) => s.vehicleId !== id),
           schedules: d.schedules.filter((s) => s.vehicleId !== id),
           recommendations: d.recommendations.filter((r) => r.vehicleId !== id),
+          fillups: d.fillups.filter((f) => f.vehicleId !== id),
         }))
       },
 
