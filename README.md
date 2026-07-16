@@ -6,9 +6,11 @@ the easy jobs yourself.
 
 **Live app:** https://jarrodbrown001-collab.github.io/carcare/ — installable on
 phones via "Add to Home Screen", and works offline once loaded (service worker
-precaches the app). Data stays in each device's browser; move it between
-devices with Export/Import in the footer. First-time visitors can load a
-sample car from the welcome screen to explore before entering their own data.
+precaches the app). By default data stays in each device's browser (move it
+between devices with Export/Import in the footer); sign in to sync it to your
+account instead — see [Cloud sync](#cloud-sync-optional) below. First-time
+visitors can load a sample car from the welcome screen to explore before
+entering their own data.
 
 ## Features
 
@@ -51,9 +53,11 @@ sample car from the welcome screen to explore before entering their own data.
 - **Reminders & nudges** — optional browser notification when the app opens
   with items due, a banner when your backup is stale, and a warning when a
   vehicle's odometer hasn't been updated in over a month.
-- **Local & private** — everything lives in your browser's localStorage. Export /
-  import a JSON backup from the footer, or move data between devices with the
-  copy/paste "Transfer devices" flow.
+- **Local by default, cloud sync optional** — with no setup, everything lives
+  in your browser's localStorage: export/import a JSON backup from the footer,
+  or move data between devices with the copy/paste "Transfer devices" flow.
+  Configure Supabase (see below) and sign in with a magic-link email to sync
+  vehicles, history, and owner's-manual PDFs across every device instead.
 
 ## Running it
 
@@ -63,18 +67,52 @@ npm run dev       # development server at http://localhost:5173
 npm run build     # production build in dist/
 ```
 
+## Cloud sync (optional)
+
+Cross-device sync runs on [Supabase](https://supabase.com) (Postgres + auth +
+file storage). The app works fine without it — this is purely opt-in.
+
+1. Create a free account at [supabase.com](https://supabase.com) and a new project.
+2. Open the project's **SQL Editor** and run everything in
+   [`supabase/schema.sql`](supabase/schema.sql) — it creates the five data
+   tables, row-level security policies (each account can only ever see its own
+   rows), and a private `manuals` storage bucket for owner's-manual PDFs.
+3. In **Authentication > Sign In / Providers**, confirm Email is enabled. In
+   **Authentication > URL Configuration**, add your dev URL
+   (`http://localhost:5173`) and your deployed URL to Redirect URLs so the
+   magic-link email works from both.
+4. In **Project Settings > API**, copy the **Project URL** and **anon public**
+   key.
+5. Locally: copy `.env.example` to `.env.local` and fill in those two values.
+   Restart `npm run dev` — a sign-in screen should appear.
+6. For the deployed GitHub Pages build: in the GitHub repo, go to
+   **Settings > Secrets and variables > Actions > Variables** and add
+   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (the anon key is safe to
+   expose publicly — row-level security is what actually protects the data).
+   The next push to `main` will build with cloud sync enabled.
+
+Signing in the first time on a device that already has local vehicle data
+prompts a one-time "upload to my account" migration; nothing is deleted from
+localStorage in the process.
+
 ## Code map
 
 | Path | What it is |
 |---|---|
-| `src/lib/store.js` | localStorage persistence, actions, due-status logic |
+| `src/lib/store.js` | data persistence (localStorage and/or Supabase), actions, due-status logic |
+| `src/lib/supabaseClient.js` | Supabase client + `cloudEnabled` flag (env-driven) |
+| `src/lib/auth.jsx` | auth context — session state, magic-link sign-in/out |
+| `src/components/Auth.jsx` | sign-in screen |
+| `src/lib/manualStore.js` | owner's-manual PDF storage (IndexedDB locally, Supabase Storage in the cloud) |
+| `supabase/schema.sql` | tables, row-level security, storage bucket — run once per Supabase project |
 | `src/lib/forecast.js` | 12-month cost projection & driving-rate estimation |
 | `src/lib/recommendations.js` | cost/savings math for recommended repairs |
 | `src/lib/serviceTypes.js` | catalog of service types + default intervals |
 | `src/data/guides.js` | the DIY tutorial content |
 | `src/components/` | Dashboard, Vehicles, VehicleDetail, Costs, Budget, Recommendations, Guides, ServiceForm |
 
-Data is stored under the `carcare-data-v1` key as
-`{ vehicles, services, schedules, recommendations, fillups }`. Owner's-manual
-PDFs live separately in IndexedDB (`carcare-manuals`) and are not part of the
-JSON backup.
+Locally, data is cached under the `carcare-data-v1` localStorage key as
+`{ vehicles, services, schedules, recommendations, fillups }` — when signed in
+this is a read cache of Supabase, not the source of truth. Owner's-manual PDFs
+live separately (IndexedDB locally, a private Supabase Storage bucket in the
+cloud) and are not part of the JSON backup either way.

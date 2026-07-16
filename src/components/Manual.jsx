@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { manualSourceFor } from '../data/manualSources'
-import { saveManual, getManual, deleteManual, manualToBlobUrl } from '../lib/manualStore'
+import { saveManual, getManualMeta, deleteManual, openManual } from '../lib/manualStore'
+import { useAuth } from '../lib/auth.jsx'
 
 function VinField({ vehicle, actions }) {
   const [vin, setVin] = useState(vehicle.vin ?? '')
@@ -30,6 +31,8 @@ function VinField({ vehicle, actions }) {
 }
 
 export default function ManualSection({ vehicle, actions }) {
+  const { user } = useAuth()
+  const userId = user?.id
   const [record, setRecord] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showSteps, setShowSteps] = useState(false)
@@ -39,14 +42,14 @@ export default function ManualSection({ vehicle, actions }) {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    getManual(vehicle.id).then((r) => {
+    getManualMeta(vehicle.id, userId).then((r) => {
       if (!cancelled) {
         setRecord(r ?? null)
         setLoading(false)
       }
     })
     return () => { cancelled = true }
-  }, [vehicle.id])
+  }, [vehicle.id, userId])
 
   async function onUpload(e) {
     const file = e.target.files?.[0]
@@ -56,19 +59,26 @@ export default function ManualSection({ vehicle, actions }) {
       alert('Please upload a PDF file.')
       return
     }
-    await saveManual(vehicle.id, file)
-    setRecord(await getManual(vehicle.id))
+    try {
+      await saveManual(vehicle.id, file, userId)
+      setRecord(await getManualMeta(vehicle.id, userId))
+    } catch (err) {
+      alert(`Couldn't save the manual: ${err.message}`)
+    }
   }
 
   async function onRemove() {
     if (!window.confirm('Remove the stored owner\'s manual for this vehicle?')) return
-    await deleteManual(vehicle.id)
-    setRecord(null)
+    try {
+      await deleteManual(vehicle.id, userId)
+      setRecord(null)
+    } catch (err) {
+      alert(`Couldn't remove the manual: ${err.message}`)
+    }
   }
 
   function onView() {
-    const url = manualToBlobUrl(record)
-    if (url) window.open(url, '_blank', 'noopener')
+    openManual(vehicle.id, userId).catch((err) => alert(`Couldn't open the manual: ${err.message}`))
   }
 
   return (

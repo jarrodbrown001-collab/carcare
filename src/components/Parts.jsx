@@ -1,7 +1,8 @@
 import { serviceLabel, serviceType } from '../lib/serviceTypes'
 import { partInfoFor, vehicleProfile } from '../data/partsCatalog'
 import { shopLinks, youtubeSearchLink } from '../lib/partsLookup'
-import { getManual, manualToBlobUrl } from '../lib/manualStore'
+import { getManualBlobUrl } from '../lib/manualStore'
+import { useAuth } from '../lib/auth.jsx'
 import { GUIDES } from '../data/guides'
 
 function guideFor(serviceTypeId) {
@@ -11,17 +12,21 @@ function guideFor(serviceTypeId) {
 
 // Chrome's PDF viewer honors #page= on blob URLs, so this jumps the stored
 // manual straight to the page the spec came from.
-async function openManualPage(vehicleId, page) {
-  const rec = await getManual(vehicleId)
-  if (!rec) {
-    alert("No manual PDF uploaded for this vehicle yet — add one in the Owner's manual section above.")
-    return
+async function openManualPage(vehicleId, page, userId) {
+  try {
+    const url = await getManualBlobUrl(vehicleId, userId)
+    if (!url) {
+      alert("No manual PDF uploaded for this vehicle yet — add one in the Owner's manual section above.")
+      return
+    }
+    window.open(`${url}#page=${page}`, '_blank', 'noopener')
+  } catch (err) {
+    alert(`Couldn't open the manual: ${err.message}`)
   }
-  const url = manualToBlobUrl(rec)
-  window.open(`${url}#page=${page}`, '_blank', 'noopener')
 }
 
 function PartCard({ vehicle, serviceTypeId }) {
+  const { user } = useAuth()
   const info = partInfoFor(vehicle, serviceTypeId)
   const guide = guideFor(serviceTypeId)
   const label = serviceLabel(serviceTypeId)
@@ -60,7 +65,7 @@ function PartCard({ vehicle, serviceTypeId }) {
           ▶ DIY videos ↗
         </a>
         {info?.manualPage && (
-          <button className="btn btn-small" onClick={() => openManualPage(vehicle.id, info.manualPage)}>
+          <button className="btn btn-small" onClick={() => openManualPage(vehicle.id, info.manualPage, user?.id)}>
             📖 Manual p.{info.manualPage}
           </button>
         )}

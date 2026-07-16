@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { useAppData, dueItems, lastBackupAt, markBackupDone, daysSince } from './lib/store'
+import { useAppData, dueItems, lastBackupAt, markBackupDone, daysSince, hasLocalBackup } from './lib/store'
+import { useAuth } from './lib/auth.jsx'
+import { cloudEnabled } from './lib/supabaseClient'
 import { openRecommendations } from './lib/recommendations'
 import { buildSampleData } from './lib/sampleData'
 import { maybeNotifyDue } from './lib/notify'
@@ -12,6 +14,7 @@ import Guides from './components/Guides'
 import Fuel from './components/Fuel'
 import ServiceForm from './components/ServiceForm'
 import Transfer from './components/Transfer'
+import SignInScreen from './components/Auth.jsx'
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard' },
@@ -28,12 +31,14 @@ const TABS = [
 const BACKUP_STALE_DAYS = 14
 
 export default function App() {
-  const { data, actions } = useAppData()
+  const { user, loading: authLoading, signOut } = useAuth()
+  const { data, actions, loaded, cloud } = useAppData(user)
   const [view, setView] = useState({ name: 'dashboard', params: {} })
   const [serviceModal, setServiceModal] = useState(null) // { vehicleId?, type? }
   const [transferOpen, setTransferOpen] = useState(false)
   const [backupDismissed, setBackupDismissed] = useState(false)
   const [backupStamp, setBackupStamp] = useState(lastBackupAt)
+  const [migrateState, setMigrateState] = useState('idle') // idle | offering | migrating | done | dismissed
   const fileInput = useRef(null)
 
   const navigate = (name, params = {}) => setView({ name, params })
@@ -47,6 +52,25 @@ export default function App() {
     maybeNotifyDue(data)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // First sign-in on a device that already has local vehicle data: offer to
+  // bring it into the new cloud account once, rather than silently orphaning it.
+  useEffect(() => {
+    if (cloud && loaded && migrateState === 'idle') {
+      setMigrateState(data.vehicles.length === 0 && hasLocalBackup() ? 'offering' : 'dismissed')
+    }
+  }, [cloud, loaded, migrateState, data.vehicles.length])
+
+  async function migrateLocalData() {
+    setMigrateState('migrating')
+    try {
+      await actions.migrateLocalData()
+      setMigrateState('done')
+    } catch (err) {
+      alert(`Couldn't migrate your local data: ${err.message}`)
+      setMigrateState('offering')
+    }
+  }
 
   const hasData = data.vehicles.length > 0
   const backupAge = daysSince(backupStamp)
@@ -68,9 +92,9 @@ export default function App() {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
-    reader.onload = () => {
+    reader.onload = async () => {
       try {
-        actions.importData(reader.result)
+        await actions.importData(reader.result)
         alert('Backup restored.')
       } catch (err) {
         alert(`Couldn't import: ${err.message}`)
@@ -78,6 +102,18 @@ export default function App() {
     }
     reader.readAsText(file)
     e.target.value = ''
+  }
+
+  if (cloudEnabled && authLoading) {
+    return (
+      <div className="page">
+        <p className="muted">Loading…</p>
+      </div>
+    )
+  }
+
+  if (cloudEnabled && !user) {
+    return <SignInScreen />
   }
 
   return (
@@ -99,13 +135,42 @@ export default function App() {
             </button>
           ))}
         </nav>
+        {cloud && (
+          <div className="account-menu">
+            <span className="muted">{user.email}</span>
+            <button className="btn-link" onClick={signOut}>Sign out</button>
+          </div>
+        )}
       </header>
+
+      {cloud && !loaded && (
+        <div className="banner">
+          <span>Loading your synced data…</span>
+        </div>
+      )}
+
+      {migrateState === 'offering' && (
+        <div className="banner">
+          <span>📦 Found vehicle data saved on this device from before you signed in. Bring it into your account?</span>
+          <span className="banner-actions">
+            <button className="btn btn-small btn-primary" onClick={migrateLocalData}>Upload to my account</button>
+            <button className="btn-icon" aria-label="Dismiss" onClick={() => setMigrateState('dismissed')}>✕</button>
+          </span>
+        </div>
+      )}
+      {migrateState === 'migrating' && (
+        <div className="banner">
+          <span>Uploading your local data…</span>
+        </div>
+      )}
 
       {backupStale && (
         <div className="banner">
           <span>
             💾 {backupStamp == null
-              ? "Your data lives only in this browser and has never been backed up."
+              ? cloud
+                ? 'This device has never exported a local backup file.'
+                : "Your data lives only in this browser and has never been backed up."
               : `Last backup was ${backupAge} days ago.`}
           </span>
           <span className="banner-actions">
@@ -121,7 +186,11 @@ export default function App() {
             data={data}
             navigate={navigate}
             onLogService={onLogService}
-            onLoadSample={() => actions.importData(JSON.stringify(buildSampleData()))}
+            onLoadSample={() =>
+              actions
+                .importData(JSON.stringify(buildSampleData()))
+                .catch((err) => alert(`Couldn't load sample data: ${err.message}`))
+            }
           />
         )}
         {view.name === 'vehicles' && (
@@ -141,11 +210,15 @@ export default function App() {
       </main>
 
       <footer className="footer">
-        <span className="muted">Your data lives only in this browser.</span>
+        <span className="muted">
+          {cloud ? 'Synced to your account.' : 'Your data lives only in this browser.'}
+        </span>
         <span className="footer-actions">
           <button className="btn-link" onClick={exportBackup}>Export backup</button>
           <button className="btn-link" onClick={() => fileInput.current?.click()}>Import</button>
-          <button className="btn-link" onClick={() => setTransferOpen(true)}>Transfer devices</button>
+          {!cloud && (
+            <button className="btn-link" onClick={() => setTransferOpen(true)}>Transfer devices</button>
+          )}
           <input ref={fileInput} type="file" accept=".json" hidden onChange={importBackup} />
         </span>
       </footer>

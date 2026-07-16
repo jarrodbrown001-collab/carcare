@@ -78,6 +78,8 @@ p { margin: 0 0 10px; }
 
 .tabs { display: flex; gap: 4px; flex-wrap: wrap; }
 
+.account-menu { display: flex; align-items: center; gap: 10px; margin-left: auto; font-size: 13px; }
+
 .tab {
   border: none;
   background: none;
@@ -516,6 +518,24 @@ p { margin: 0 0 10px; }
   max-width: 360px;
   margin: 0;
 }
+
+/* ---------- Auth ---------- */
+.auth-page {
+  min-height: 100vh;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+.auth-card h1 { margin: 0; }
+.auth-card .form { text-align: left; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 640px) {
