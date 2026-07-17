@@ -19,9 +19,12 @@ export default function Transfer({ data, actions, onClose }) {
     }
   }
 
-  function receive() {
+  async function receive() {
+    if (!window.confirm('Import this data? It replaces everything currently in CarCare on this device — vehicles, history, all of it.')) {
+      return
+    }
     try {
-      actions.importData(pasted)
+      await actions.importData(pasted)
       alert('Data imported — this device now matches the one you copied from.')
       onClose()
     } catch (err) {
@@ -46,6 +49,11 @@ export default function Transfer({ data, actions, onClose }) {
             Copy everything below and get it to the other device however you like — email it to
             yourself, paste it in a message, a shared note. On the other device, open this same
             dialog and choose "Receive".
+          </p>
+          <p className="muted">
+            Owner's-manual PDFs aren't included here — they're too large for a copy/paste transfer.
+            Re-upload them from each vehicle's page on the new device, or sign in with cloud sync
+            instead, which carries manuals over automatically.
           </p>
           <textarea readOnly rows={6} value={json} onFocus={(e) => e.target.select()} />
           <div className="form-actions">

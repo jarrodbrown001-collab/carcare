@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_SCHEDULE_TYPES, serviceType } from './serviceTypes'
 import { supabase, cloudEnabled } from './supabaseClient'
-import { getManualMeta, getManualBlobUrl, saveManual } from './manualStore'
+import { getManualMeta, getManualBlobUrl, saveManual, deleteManual } from './manualStore'
 
 const STORAGE_KEY = 'carcare-data-v1'
 const PRE_CLOUD_BACKUP_KEY = 'carcare-pre-cloud-backup'
@@ -436,6 +436,12 @@ export function useAppData(user) {
         }))
         // Related rows are removed server-side via ON DELETE CASCADE.
         if (cloud) fireAndAlert(supabase.from('vehicles').delete().eq('id', id))
+        // The owner's-manual PDF lives outside this data model (IndexedDB or
+        // Supabase Storage) and isn't covered by the cascade above — clean it
+        // up too so a deleted vehicle doesn't leave an orphaned file behind.
+        deleteManual(id, cloud ? user.id : null).catch((err) =>
+          console.error(`Couldn't remove the owner's manual for deleted vehicle ${id}:`, err),
+        )
       },
 
       setMileage(vehicleId, miles) {
@@ -595,14 +601,31 @@ export function useAppData(user) {
         if (!parsed || !Array.isArray(parsed.vehicles)) throw new Error('Not a CarCare backup file')
         const merged = { ...EMPTY, ...parsed }
         if (cloud) {
-          // Full replace: clear this account's cloud data, then upload the
-          // imported set. Child rows cascade-delete with their vehicle.
-          const { error: delError } = await supabase.from('vehicles').delete().eq('user_id', user.id)
-          if (delError) throw delError
+          // Upsert the imported rows first, then prune whatever's left over
+          // that isn't in the import — deliberately NOT delete-then-insert.
+          // That ordering would wipe every row up front and rely on the
+          // inserts all succeeding afterward; a dropped connection partway
+          // through leaves the account with nothing and no way back. This
+          // way, nothing is destroyed until the new/kept data is already
+          // safely written, and vehicles are pruned first so their cascade
+          // delete clears most stale child rows for free.
           for (const table of TABLES) {
             const rows = merged[table]
             if (rows.length) {
-              const { error } = await supabase.from(table).insert(rows.map((r) => ROW_MAP[table].toRow(r, user.id)))
+              const { error } = await supabase.from(table).upsert(rows.map((r) => ROW_MAP[table].toRow(r, user.id)))
+              if (error) throw error
+            }
+          }
+          for (const table of TABLES) {
+            const { data: existing, error: fetchError } = await supabase
+              .from(table)
+              .select('id')
+              .eq('user_id', user.id)
+            if (fetchError) throw fetchError
+            const keep = new Set(merged[table].map((r) => r.id))
+            const staleIds = existing.map((r) => r.id).filter((id) => !keep.has(id))
+            if (staleIds.length) {
+              const { error } = await supabase.from(table).delete().in('id', staleIds)
               if (error) throw error
             }
           }

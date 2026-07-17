@@ -90,7 +90,11 @@ export default function App() {
 
   function importBackup(e) {
     const file = e.target.files?.[0]
+    e.target.value = ''
     if (!file) return
+    if (!window.confirm('Import this backup? It replaces everything currently in CarCare — vehicles, history, all of it — with the contents of this file.')) {
+      return
+    }
     const reader = new FileReader()
     reader.onload = async () => {
       try {
@@ -101,7 +105,6 @@ export default function App() {
       }
     }
     reader.readAsText(file)
-    e.target.value = ''
   }
 
   if (cloudEnabled && authLoading) {
