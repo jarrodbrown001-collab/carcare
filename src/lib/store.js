@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { DEFAULT_SCHEDULE_TYPES, serviceType } from './serviceTypes'
 import { supabase, cloudEnabled } from './supabaseClient'
+import { getManualMeta, getManualBlobUrl, saveManual } from './manualStore'
 
 const STORAGE_KEY = 'carcare-data-v1'
 const PRE_CLOUD_BACKUP_KEY = 'carcare-pre-cloud-backup'
@@ -633,6 +634,22 @@ export function useAppData(user) {
           for (const table of TABLES) next[table] = [...d[table], ...local[table]]
           return next
         })
+        // Owner's-manual PDFs live in IndexedDB, not the JSON blob above —
+        // carry any of those up to cloud storage too, best-effort per
+        // vehicle so one bad file can't block the rest of the migration.
+        for (const v of local.vehicles) {
+          try {
+            const meta = await getManualMeta(v.id, null)
+            if (!meta) continue
+            const url = await getManualBlobUrl(v.id, null)
+            if (!url) continue
+            const blob = await fetch(url).then((r) => r.blob())
+            URL.revokeObjectURL(url)
+            await saveManual(v.id, blob, user.id)
+          } catch (err) {
+            console.error(`Couldn't migrate owner's manual for vehicle ${v.id}:`, err)
+          }
+        }
       },
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
