@@ -536,6 +536,8 @@ p { margin: 0 0 10px; }
 }
 .auth-card h1 { margin: 0; }
 .auth-card .form { text-align: left; }
+.auth-links { display: flex; flex-direction: column; gap: 6px; margin: 0; }
+.auth-links .btn-link { align-self: center; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 640px) {

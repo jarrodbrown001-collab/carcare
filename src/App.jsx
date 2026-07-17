@@ -31,7 +31,7 @@ const TABS = [
 const BACKUP_STALE_DAYS = 14
 
 export default function App() {
-  const { user, loading: authLoading, signOut } = useAuth()
+  const { user, loading: authLoading, signOut, passwordRecovery } = useAuth()
   const { data, actions, loaded, cloud } = useAppData(user)
   const [view, setView] = useState({ name: 'dashboard', params: {} })
   const [serviceModal, setServiceModal] = useState(null) // { vehicleId?, type? }
@@ -112,7 +112,7 @@ export default function App() {
     )
   }
 
-  if (cloudEnabled && !user) {
+  if (cloudEnabled && (!user || passwordRecovery)) {
     return <SignInScreen />
   }
 

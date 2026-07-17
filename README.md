@@ -77,10 +77,12 @@ file storage). The app works fine without it — this is purely opt-in.
    [`supabase/schema.sql`](supabase/schema.sql) — it creates the five data
    tables, row-level security policies (each account can only ever see its own
    rows), and a private `manuals` storage bucket for owner's-manual PDFs.
-3. In **Authentication > Sign In / Providers**, confirm Email is enabled. In
-   **Authentication > URL Configuration**, add your dev URL
-   (`http://localhost:5173`) and your deployed URL to Redirect URLs so the
-   magic-link email works from both.
+3. In **Authentication > Sign In / Providers**, confirm Email is enabled —
+   this one provider covers password sign-in/sign-up, the passwordless
+   magic-link option, and password-reset emails; nothing extra to turn on.
+   In **Authentication > URL Configuration**, add your dev URL
+   (`http://localhost:5173`) and your deployed URL to Redirect URLs so
+   confirmation, magic-link, and reset emails all work from both.
 4. In **Project Settings > API**, copy the **Project URL** and **anon public**
    key.
 5. Locally: copy `.env.example` to `.env.local` and fill in those two values.
@@ -94,6 +96,14 @@ file storage). The app works fine without it — this is purely opt-in.
 Signing in the first time on a device that already has local vehicle data
 prompts a one-time "upload to my account" migration; nothing is deleted from
 localStorage in the process.
+
+The sign-in screen supports **email + password** (create an account once,
+then sign in with the same password on every device — no waiting on an
+email each time), a **passwordless sign-in link** as an alternative, and
+**forgot-password** reset. By default Supabase requires confirming a new
+account's email before its password can be used to sign in (Authentication
+> Providers > Email > "Confirm email") — leave that on; it only affects the
+very first sign-up, not later sign-ins from other devices.
 
 ## Code map
 
